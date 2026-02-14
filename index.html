@@ -19,6 +19,7 @@
         text-align: center;
         padding: 10px;
         background: #1a1a1a;
+        font-size: 24px;
     }
 
     .top-bar input {
@@ -54,23 +55,23 @@
     }
 
     .name {
-        font-size: 32px;
         margin-bottom: 20px;
+        font-weight: bold;
     }
 
     .score {
-        font-size: 130px;
         margin: 20px 0;
+        font-weight: bold;
     }
 
     .buttons {
         display: flex;
-        gap: 20px;
+        gap: 15px;
     }
 
     button {
-        font-size: 36px;
-        padding: 25px 50px;
+        font-size: 30px;
+        padding: 20px 40px;
         border: none;
         border-radius: 16px;
         background: #2d6cdf;
@@ -87,10 +88,26 @@
 
     .reset {
         background: #cc3333;
-        font-size: 28px;
-        padding: 15px 30px;
+        font-size: 26px;
+        padding: 12px 30px;
         margin: 10px auto;
         border-radius: 12px;
+    }
+
+    .modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .modal button {
+        font-size: 32px;
+        padding: 20px 50px;
     }
 </style>
 </head>
@@ -102,116 +119,123 @@
     <input type="number" id="targetScore" min="5" step="5">
 </div>
 
-<div class="container">
+<div class="container" id="gameContainer"></div>
 
-    <div class="player" id="player1Box">
-        <div class="name" id="name1Display"></div>
-        <div class="score" id="score1">0</div>
-        <div class="buttons">
-            <button onclick="changeScore(1, -5)" class="minus">-5</button>
-            <button onclick="changeScore(1, 5)">+5</button>
-        </div>
-    </div>
-
-    <div class="player" id="player2Box">
-        <div class="name" id="name2Display"></div>
-        <div class="score" id="score2">0</div>
-        <div class="buttons">
-            <button onclick="changeScore(2, -5)" class="minus">-5</button>
-            <button onclick="changeScore(2, 5)">+5</button>
-        </div>
-    </div>
-
-</div>
-
-<button class="reset" onclick="resetGame()">Reset Game</button>
+<button class="reset" onclick="startSetup()">Reset Game</button>
 
 <script>
-    let score1 = 0;
-    let score2 = 0;
-    let target = 150;
 
-    function vibrate() {
-        if (navigator.vibrate) {
-            navigator.vibrate(30);
-        }
-    }
+let players = [];
+let target = 150;
 
-    function loadGame() {
-        score1 = parseInt(localStorage.getItem("score1")) || 0;
-        score2 = parseInt(localStorage.getItem("score2")) || 0;
+function vibrate() {
+    if (navigator.vibrate) navigator.vibrate(30);
+}
+
+function saveGame() {
+    localStorage.setItem("players", JSON.stringify(players));
+    localStorage.setItem("target", target);
+}
+
+function loadGame() {
+    const savedPlayers = localStorage.getItem("players");
+    if (savedPlayers) {
+        players = JSON.parse(savedPlayers);
         target = parseInt(localStorage.getItem("target")) || 150;
-
-        document.getElementById("score1").innerText = score1;
-        document.getElementById("score2").innerText = score2;
         document.getElementById("targetScore").value = target;
-
-        document.getElementById("name1Display").innerText =
-            localStorage.getItem("name1") || "Player 1";
-
-        document.getElementById("name2Display").innerText =
-            localStorage.getItem("name2") || "Player 2";
-
-        checkWinner();
+        renderPlayers();
+    } else {
+        startSetup();
     }
+}
 
-    function changeScore(player, amount) {
-        vibrate();
+function renderPlayers() {
+    const container = document.getElementById("gameContainer");
+    container.innerHTML = "";
 
-        if (player === 1) {
-            score1 += amount;
-            document.getElementById("score1").innerText = score1;
-            localStorage.setItem("score1", score1);
-        } else {
-            score2 += amount;
-            document.getElementById("score2").innerText = score2;
-            localStorage.setItem("score2", score2);
-        }
+    const count = players.length;
 
-        checkWinner();
-    }
+    let nameSize = count === 2 ? "42px" : count === 3 ? "34px" : "28px";
+    let scoreSize = count === 2 ? "140px" : count === 3 ? "110px" : "90px";
 
-    function checkWinner() {
-        document.getElementById("player1Box").classList.remove("winner");
-        document.getElementById("player2Box").classList.remove("winner");
+    players.forEach((player, index) => {
+        const div = document.createElement("div");
+        div.className = "player";
+        div.id = "player" + index;
 
-        if (score1 >= target) {
-            document.getElementById("player1Box").classList.add("winner");
-        }
+        div.innerHTML = `
+            <div class="name" style="font-size:${nameSize}">
+                ${player.name}
+            </div>
+            <div class="score" id="score${index}" style="font-size:${scoreSize}">
+                ${player.score}
+            </div>
+            <div class="buttons">
+                <button class="minus" onclick="changeScore(${index}, -5)">-5</button>
+                <button onclick="changeScore(${index}, 5)">+5</button>
+            </div>
+        `;
 
-        if (score2 >= target) {
-            document.getElementById("player2Box").classList.add("winner");
-        }
-    }
-
-    function resetGame() {
-        if (!confirm("Start a new game?")) return;
-
-        let name1 = prompt("Enter Player 1 name:");
-        let name2 = prompt("Enter Player 2 name:");
-
-        score1 = 0;
-        score2 = 0;
-
-        localStorage.setItem("score1", 0);
-        localStorage.setItem("score2", 0);
-
-        if (name1) localStorage.setItem("name1", name1);
-        if (name2) localStorage.setItem("name2", name2);
-
-        document.getElementById("score1").innerText = 0;
-        document.getElementById("score2").innerText = 0;
-
-        loadGame();
-    }
-
-    document.getElementById("targetScore").addEventListener("input", function() {
-        target = parseInt(this.value) || 150;
-        localStorage.setItem("target", target);
-        checkWinner();
+        container.appendChild(div);
     });
 
-    window.onload = loadGame;
+    checkWinner();
+}
+
+function changeScore(index, amount) {
+    vibrate();
+    players[index].score += amount;
+    document.getElementById("score" + index).innerText = players[index].score;
+    saveGame();
+    checkWinner();
+}
+
+function checkWinner() {
+    players.forEach((player, index) => {
+        const box = document.getElementById("player" + index);
+        box.classList.remove("winner");
+        if (player.score >= target) {
+            box.classList.add("winner");
+        }
+    });
+}
+
+function startSetup() {
+    const modal = document.createElement("div");
+    modal.className = "modal";
+    modal.innerHTML = `
+        <div style="font-size:32px;">How many players?</div>
+        <button onclick="choosePlayers(2)">2</button>
+        <button onclick="choosePlayers(3)">3</button>
+        <button onclick="choosePlayers(4)">4</button>
+    `;
+    document.body.appendChild(modal);
+}
+
+function choosePlayers(count) {
+    document.querySelector(".modal").remove();
+    players = [];
+
+    for (let i = 0; i < count; i++) {
+        let name = prompt("Enter name for Player " + (i + 1));
+        players.push({
+            name: name || "Player " + (i + 1),
+            score: 0
+        });
+    }
+
+    saveGame();
+    renderPlayers();
+}
+
+document.getElementById("targetScore").addEventListener("input", function() {
+    target = parseInt(this.value) || 150;
+    saveGame();
+    checkWinner();
+});
+
+window.onload = loadGame;
+
 </script>
 
 </body>
