@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Domino Scoreboard</title>
+
+<style>
+    body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        background: #111;
+        color: white;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+    }
+
+    .top-bar {
+        text-align: center;
+        padding: 10px;
+        background: #1a1a1a;
+    }
+
+    .top-bar input {
+        font-size: 24px;
+        width: 120px;
+        text-align: center;
+        border-radius: 8px;
+        border: none;
+        padding: 6px;
+    }
+
+    .container {
+        display: flex;
+        flex: 1;
+    }
+
+    .player {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        border-right: 2px solid #333;
+        transition: background 0.3s;
+    }
+
+    .player:last-child {
+        border-right: none;
+    }
+
+    .winner {
+        background: #1f4d1f;
+    }
+
+    .name {
+        font-size: 32px;
+        margin-bottom: 20px;
+    }
+
+    .score {
+        font-size: 130px;
+        margin: 20px 0;
+    }
+
+    .buttons {
+        display: flex;
+        gap: 20px;
+    }
+
+    button {
+        font-size: 36px;
+        padding: 25px 50px;
+        border: none;
+        border-radius: 16px;
+        background: #2d6cdf;
+        color: white;
+    }
+
+    button:active {
+        transform: scale(0.95);
+    }
+
+    .minus {
+        background: #555;
+    }
+
+    .reset {
+        background: #cc3333;
+        font-size: 28px;
+        padding: 15px 30px;
+        margin: 10px auto;
+        border-radius: 12px;
+    }
+</style>
+</head>
+
+<body>
+
+<div class="top-bar">
+    Play to:
+    <input type="number" id="targetScore" min="5" step="5">
+</div>
+
+<div class="container">
+
+    <div class="player" id="player1Box">
+        <div class="name" id="name1Display"></div>
+        <div class="score" id="score1">0</div>
+        <div class="buttons">
+            <button onclick="changeScore(1, -5)" class="minus">-5</button>
+            <button onclick="changeScore(1, 5)">+5</button>
+        </div>
+    </div>
+
+    <div class="player" id="player2Box">
+        <div class="name" id="name2Display"></div>
+        <div class="score" id="score2">0</div>
+        <div class="buttons">
+            <button onclick="changeScore(2, -5)" class="minus">-5</button>
+            <button onclick="changeScore(2, 5)">+5</button>
+        </div>
+    </div>
+
+</div>
+
+<button class="reset" onclick="resetGame()">Reset Game</button>
+
+<script>
+    let score1 = 0;
+    let score2 = 0;
+    let target = 150;
+
+    function vibrate() {
+        if (navigator.vibrate) {
+            navigator.vibrate(30);
+        }
+    }
+
+    function loadGame() {
+        score1 = parseInt(localStorage.getItem("score1")) || 0;
+        score2 = parseInt(localStorage.getItem("score2")) || 0;
+        target = parseInt(localStorage.getItem("target")) || 150;
+
+        document.getElementById("score1").innerText = score1;
+        document.getElementById("score2").innerText = score2;
+        document.getElementById("targetScore").value = target;
+
+        document.getElementById("name1Display").innerText =
+            localStorage.getItem("name1") || "Player 1";
+
+        document.getElementById("name2Display").innerText =
+            localStorage.getItem("name2") || "Player 2";
+
+        checkWinner();
+    }
+
+    function changeScore(player, amount) {
+        vibrate();
+
+        if (player === 1) {
+            score1 += amount;
+            document.getElementById("score1").innerText = score1;
+            localStorage.setItem("score1", score1);
+        } else {
+            score2 += amount;
+            document.getElementById("score2").innerText = score2;
+            localStorage.setItem("score2", score2);
+        }
+
+        checkWinner();
+    }
+
+    function checkWinner() {
+        document.getElementById("player1Box").classList.remove("winner");
+        document.getElementById("player2Box").classList.remove("winner");
+
+        if (score1 >= target) {
+            document.getElementById("player1Box").classList.add("winner");
+        }
+
+        if (score2 >= target) {
+            document.getElementById("player2Box").classList.add("winner");
+        }
+    }
+
+    function resetGame() {
+        if (!confirm("Start a new game?")) return;
+
+        let name1 = prompt("Enter Player 1 name:");
+        let name2 = prompt("Enter Player 2 name:");
+
+        score1 = 0;
+        score2 = 0;
+
+        localStorage.setItem("score1", 0);
+        localStorage.setItem("score2", 0);
+
+        if (name1) localStorage.setItem("name1", name1);
+        if (name2) localStorage.setItem("name2", name2);
+
+        document.getElementById("score1").innerText = 0;
+        document.getElementById("score2").innerText = 0;
+
+        loadGame();
+    }
+
+    document.getElementById("targetScore").addEventListener("input", function() {
+        target = parseInt(this.value) || 150;
+        localStorage.setItem("target", target);
+        checkWinner();
+    });
+
+    window.onload = loadGame;
+</script>
+
+</body>
+</html>
